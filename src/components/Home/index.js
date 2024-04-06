@@ -16,40 +16,89 @@ const Home = () => {
     setUserMessage(e.target.value);
   };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setIsLoading(true);
+  
+  //  const prompt =  `Based on Following entry, generate list of questions and send them in json format so we can handle -
+  //   ${userMessage}`
+  //   const requestOptions = {
+
+  //     method: 'POST',
+  //     headers: {
+  //       accept: 'application/json',
+  //       'content-type': 'application/json',
+  //       authorization: 'Bearer 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'
+  //     },
+  //     body: JSON.stringify({
+  //       model: 'mistral-7b-instruct',
+  //       messages: [
+  //         { role: 'system', content: 'Be precise and concise.' },
+  //         { role: 'user', content: prompt }
+  //       ]
+  //     })
+  //   };
+
+  //   try {
+  //     const response = await fetch('https://api.perplexity.ai/chat/completions', requestOptions);
+  //     const data = await response.json();
+  //     generateQuestions(data);
+  //   } catch (error) {
+  //     console.error('Error fetching completion:', error);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
   
-   const prompt =  `Based on Following entry, generate list of questions and send them in json format so we can handle -
-    ${userMessage}`
+    const prompt = `Based on Following entry, generate list of questions and send them in json format so we can handle -
+      ${userMessage}`;
     const requestOptions = {
-
       method: 'POST',
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        authorization: 'Bearer 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'
+        authorization: 'Bearer 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',
       },
       body: JSON.stringify({
         model: 'mistral-7b-instruct',
         messages: [
           { role: 'system', content: 'Be precise and concise.' },
-          { role: 'user', content: prompt }
-        ]
-      })
+          { role: 'user', content: prompt },
+        ],
+      }),
     };
-
+  
     try {
       const response = await fetch('https://api.perplexity.ai/chat/completions', requestOptions);
       const data = await response.json();
       generateQuestions(data);
+  
+      // Save user prompt and response to MongoDB
+      const saveResponse = await fetch('http://localhost:3030/api/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: userMessage,
+          response: data.choices[0].message.content, // Assuming the response structure
+        }),
+      });
+      if (!saveResponse.ok) {
+        throw new Error('Failed to save data');
+      }
     } catch (error) {
       console.error('Error fetching completion:', error);
     } finally {
       setIsLoading(false);
     }
   };
-
+  
   const generateQuestions = (response) => {
 
     // Assuming response.choices[0]["message"]["content"] contains the completion
